@@ -27,7 +27,7 @@ public:
 	// Inherited via IAbilitySystemInterface
 	UAbilitySystemComponent* GetAbilitySystemComponent() const override;
 
-	virtual void PosessedBy(AController* NewController);
+	virtual void PossessedBy(AController* NewController);
 	virtual void OnRep_PlayerState() override;
 	virtual void InitializeAttributes();
 	virtual void GiveDefaultAbilities();

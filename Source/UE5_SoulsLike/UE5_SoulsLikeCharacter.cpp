@@ -14,6 +14,7 @@ AUE5_SoulsLikeCharacter::AUE5_SoulsLikeCharacter()
 	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
 	Attributes = CreateDefaultSubobject<UCrossroads_AttributeSet>("Attributes");
+
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
@@ -22,11 +23,11 @@ UAbilitySystemComponent* AUE5_SoulsLikeCharacter::GetAbilitySystemComponent() co
 	return AbilitySystemComponent;
 }
 
-void AUE5_SoulsLikeCharacter::PosessedBy(AController* NewController)
+void AUE5_SoulsLikeCharacter::PossessedBy(AController* NewController)
 {
 	Super::PossessedBy(NewController);
 
-	if (AbilitySystemComponent != nullptr)
+	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	}
@@ -39,7 +40,7 @@ void AUE5_SoulsLikeCharacter::OnRep_PlayerState()
 {
 	Super::OnRep_PlayerState();
 
-	if (AbilitySystemComponent != nullptr)
+	if (AbilitySystemComponent)
 	{
 		AbilitySystemComponent->InitAbilityActorInfo(this, this);
 	}
@@ -49,6 +50,8 @@ void AUE5_SoulsLikeCharacter::OnRep_PlayerState()
 
 void AUE5_SoulsLikeCharacter::InitializeAttributes()
 {
+	UE_LOG(LogTemp, Warning, TEXT("trying InitializeAttributes"));
+
 	if (AbilitySystemComponent && DefaultAttributeEffect)
 	{
 		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
@@ -65,11 +68,14 @@ void AUE5_SoulsLikeCharacter::InitializeAttributes()
 
 void AUE5_SoulsLikeCharacter::GiveDefaultAbilities()
 {
+	UE_LOG(LogTemp, Warning, TEXT("trying GiveDefaultAbilities"));
+
 	if (HasAuthority() && AbilitySystemComponent)
 	{
 		for (TSubclassOf<UGameplayAbility>& StartupAbility : DefaultAbilities)
 		{
-			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(StartupAbility.GetDefaultObject(), 1, 0));
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(StartupAbility, 0, -1));
+			UE_LOG(LogTemp, Warning, TEXT("default ability given"));
 		}
 	}
 }
