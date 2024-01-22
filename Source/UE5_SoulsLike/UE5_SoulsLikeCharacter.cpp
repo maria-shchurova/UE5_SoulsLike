@@ -1,18 +1,21 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "UE5_SoulsLikeCharacter.h"
-#include "Camera/CameraComponent.h"
-#include "Components/CapsuleComponent.h"
-#include "Components/InputComponent.h"
-#include "GameFramework/CharacterMovementComponent.h"
-#include "GameFramework/Controller.h"
-#include "GameFramework/SpringArmComponent.h"
+//#include "Camera/CameraComponent.h"
+//#include "Components/CapsuleComponent.h"
+//#include "Components/InputComponent.h"
+//#include "GameFramework/CharacterMovementComponent.h"
+//#include "GameFramework/Controller.h"
+#include "AbilitySystemComponent.h"
+#include "Crossroads_AttributeSet.h"
+//#include "GameFramework/SpringArmComponent.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AUE5_SoulsLikeCharacter
 
 AUE5_SoulsLikeCharacter::AUE5_SoulsLikeCharacter()
 {
+	/*
 	// Set size for collision capsule
 	GetCapsuleComponent()->InitCapsuleSize(42.f, 96.0f);
 
@@ -46,14 +49,74 @@ AUE5_SoulsLikeCharacter::AUE5_SoulsLikeCharacter()
 	FollowCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("FollowCamera"));
 	FollowCamera->SetupAttachment(CameraBoom, USpringArmComponent::SocketName); // Attach the camera to the end of the boom and let the boom adjust to match the controller orientation
 	FollowCamera->bUsePawnControlRotation = false; // Camera does not rotate relative to arm
+	*/
+	AbilitySystemComponent = CreateDefaultSubobject<UAbilitySystemComponent>("AbilitySystemComponent");
+	AbilitySystemComponent->SetIsReplicated(true);
+	AbilitySystemComponent->SetReplicationMode(EGameplayEffectReplicationMode::Minimal);
 
+	Attributes = CreateDefaultSubobject<UCrossroads_AttributeSet>("Attributes");
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
 }
+UAbilitySystemComponent* AUE5_SoulsLikeCharacter::GetAbilitySystemComponent() const
+{
+	return AbilitySystemComponent;
+}
 
+void AUE5_SoulsLikeCharacter::PosessedBy(AController* NewController)
+{
+	Super::PossessedBy(NewController);
+
+	if (AbilitySystemComponent != nullptr)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+
+	InitializeAttributes();
+	GiveDefaultAbilities();
+}
+
+void AUE5_SoulsLikeCharacter::OnRep_PlayerState()
+{
+	Super::OnRep_PlayerState();
+
+	if (AbilitySystemComponent != nullptr)
+	{
+		AbilitySystemComponent->InitAbilityActorInfo(this, this);
+	}
+
+	InitializeAttributes();
+}
+
+void AUE5_SoulsLikeCharacter::InitializeAttributes()
+{
+	if (AbilitySystemComponent && DefaultAttributeEffect)
+	{
+		FGameplayEffectContextHandle EffectContext = AbilitySystemComponent->MakeEffectContext();
+		EffectContext.AddSourceObject(this);
+		FGameplayEffectSpecHandle SpecHandle = AbilitySystemComponent->MakeOutgoingSpec(DefaultAttributeEffect, 1, EffectContext);
+
+		if (SpecHandle.IsValid())
+		{
+			FActiveGameplayEffectHandle GEHandle = AbilitySystemComponent->ApplyGameplayEffectSpecToSelf(*SpecHandle.Data.Get());
+		}
+
+	}
+}
+
+void AUE5_SoulsLikeCharacter::GiveDefaultAbilities()
+{
+	if (HasAuthority() && AbilitySystemComponent)
+	{
+		for (TSubclassOf<UGameplayAbility>& StartupAbility : DefaultAbilities)
+		{
+			AbilitySystemComponent->GiveAbility(FGameplayAbilitySpec(StartupAbility.GetDefaultObject(), 1, 0));
+		}
+	}
+}
 //////////////////////////////////////////////////////////////////////////
-// Input
-
+// Input 
+/*
 void AUE5_SoulsLikeCharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
@@ -76,6 +139,8 @@ void AUE5_SoulsLikeCharacter::SetupPlayerInputComponent(class UInputComponent* P
 	PlayerInputComponent->BindTouch(IE_Pressed, this, &AUE5_SoulsLikeCharacter::TouchStarted);
 	PlayerInputComponent->BindTouch(IE_Released, this, &AUE5_SoulsLikeCharacter::TouchStopped);
 }
+
+
 
 void AUE5_SoulsLikeCharacter::TouchStarted(ETouchIndex::Type FingerIndex, FVector Location)
 {
@@ -126,4 +191,4 @@ void AUE5_SoulsLikeCharacter::MoveRight(float Value)
 		// add movement in that direction
 		AddMovementInput(Direction, Value);
 	}
-}
+}*/
